@@ -47,7 +47,7 @@ public class DemoController {
 
 	@GetMapping("/delay/{seconds}")
 	public Map delay(@PathVariable int seconds) {
-		return circuitBreakerFactory.create("delay").run(httpBin.delaySuppplier(seconds), t -> {
+		return circuitBreakerFactory.create("delay").run(httpBin.delaySupplier(seconds), t -> {
 			LOG.warn("delay call failed error", t);
 			Map<String, String> fallback = new HashMap<>();
 			fallback.put("hello", "world");

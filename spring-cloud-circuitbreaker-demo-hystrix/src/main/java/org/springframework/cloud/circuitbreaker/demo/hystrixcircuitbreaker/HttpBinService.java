@@ -41,7 +41,7 @@ public class HttpBinService {
 		return rest.getForObject("https://httpbin.org/delay/" + seconds, Map.class);
 	}
 
-	public Supplier<Map> delaySuppplier(int seconds) {
+	public Supplier<Map> delaySupplier(int seconds) {
 		return () -> this.delay(seconds);
 	}
 }

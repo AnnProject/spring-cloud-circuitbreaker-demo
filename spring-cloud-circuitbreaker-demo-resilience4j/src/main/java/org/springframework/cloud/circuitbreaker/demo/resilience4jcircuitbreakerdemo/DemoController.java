@@ -17,42 +17,69 @@ package org.springframework.cloud.circuitbreaker.demo.resilience4jcircuitbreaker
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Supplier;
+
+import io.github.resilience4j.circuitbreaker.CircuitBreaker;
+import io.github.resilience4j.decorators.Decorators;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import org.springframework.cloud.client.circuitbreaker.CircuitBreakerFactory;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-/**
- * @author Ryan Baxter
- */
 @RestController
 public class DemoController {
 
-	Logger LOG = LoggerFactory.getLogger(DemoController.class);
+    Logger LOG = LoggerFactory.getLogger(DemoController.class);
 
-	private CircuitBreakerFactory circuitBreakerFactory;
-	private HttpBinService httpBin;
+    private CircuitBreaker circuitBreaker;
+    private DemoService httpBin;
 
-	public DemoController(CircuitBreakerFactory circuitBreakerFactory, HttpBinService httpBinService) {
-		this.circuitBreakerFactory = circuitBreakerFactory;
-		this.httpBin = httpBinService;
-	}
+    public DemoController(CircuitBreaker circuitBreaker, DemoService demoService) {
+        this.circuitBreaker = circuitBreaker;
+        this.httpBin = demoService;
+    }
 
-	@GetMapping("/get")
-	public Map get() {
-		return httpBin.get();
-	}
+    @GetMapping("/get")
+    public Map get() {
+        return httpBin.get();
+    }
 
-	@GetMapping("/delay/{seconds}")
-	public Map delay(@PathVariable int seconds) {
-		return circuitBreakerFactory.create("delay").run(httpBin.delaySuppplier(seconds), t -> {
-			LOG.warn("delay call failed error", t);
-			Map<String, String> fallback = new HashMap<>();
-			fallback.put("hello", "world");
-			return fallback;
-		});
-	}
+
+    @PutMapping("/disableErrors")
+    public void disableErrors() {
+        httpBin.disableErrors();
+    }
+
+
+    @PutMapping("/enableErrors")
+    public void enableErrors() {
+        httpBin.enableErrors();
+    }
+
+    @GetMapping("/state")
+    public Map<String, Object> state() {
+        Map<String, Object> state = new HashMap<>();
+        state.put("Name", circuitBreaker.getName());
+        state.put("State", circuitBreaker.getState());
+        state.put("Metrics", circuitBreaker.getMetrics());
+        state.put("Timestamp", circuitBreaker.getTimestampUnit());
+        state.put("Tags", circuitBreaker.getTags());
+        state.put("Config", circuitBreaker.getCircuitBreakerConfig());
+        return state;
+    }
+
+    @GetMapping("/getWithCircuitBreaker")
+    public Map getWithCircuitBreaker() {
+        Supplier<Map> decorated = Decorators
+                .ofSupplier(httpBin.halfThrowsError())
+                .withCircuitBreaker(circuitBreaker)
+                .withFallback(e -> {
+                    Map<Throwable, String> message = new HashMap<>();
+                    message.put(e, "This is Circuit Breaker fallback message");
+                    return message;
+                })
+                .decorate();
+        return circuitBreaker.executeSupplier(decorated);
+    }
 }

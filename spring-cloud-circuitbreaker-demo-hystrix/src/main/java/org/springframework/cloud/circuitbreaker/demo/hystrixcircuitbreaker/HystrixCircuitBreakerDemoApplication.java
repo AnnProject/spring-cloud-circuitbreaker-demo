@@ -13,26 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.cloud.circuitbreaker.demo.resilience4jcircuitbreakerdemo;
+package org.springframework.cloud.circuitbreaker.demo.hystrixcircuitbreaker;
 
-import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig;
-import io.github.resilience4j.timelimiter.TimeLimiterConfig;
-
-import java.time.Duration;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.web.client.RestTemplateBuilder;
-import org.springframework.cloud.circuitbreaker.resilience4j.Resilience4JCircuitBreakerFactory;
-import org.springframework.cloud.circuitbreaker.resilience4j.Resilience4JConfigBuilder;
 import org.springframework.cloud.client.circuitbreaker.Customizer;
+import org.springframework.cloud.netflix.hystrix.HystrixCircuitBreakerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.web.client.RestTemplate;
+import com.netflix.hystrix.HystrixCommand;
+import com.netflix.hystrix.HystrixCommandGroupKey;
+import com.netflix.hystrix.HystrixCommandProperties;
 
 @SpringBootApplication
-public class Resilience4JCircuitbreakerDemoApplication {
+public class HystrixCircuitBreakerDemoApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(Resilience4JCircuitbreakerDemoApplication.class, args);
+		SpringApplication.run(HystrixCircuitBreakerDemoApplication.class, args);
 	}
 
 	@Bean
@@ -41,10 +39,10 @@ public class Resilience4JCircuitbreakerDemoApplication {
 	}
 
 	@Bean
-	public Customizer<Resilience4JCircuitBreakerFactory> defaultCustomizer() {
-		return factory -> factory.configureDefault(id -> new Resilience4JConfigBuilder(id)
-				.timeLimiterConfig(TimeLimiterConfig.custom().timeoutDuration(Duration.ofSeconds(3)).build())
-				.circuitBreakerConfig(CircuitBreakerConfig.ofDefaults())
-				.build());
+	public Customizer<HystrixCircuitBreakerFactory> defaultConfig() {
+		return factory -> factory.configureDefault(id -> HystrixCommand.Setter
+				.withGroupKey(HystrixCommandGroupKey.Factory.asKey(id))
+				.andCommandPropertiesDefaults(HystrixCommandProperties.Setter().withExecutionTimeoutInMilliseconds(3000)));
 	}
+
 }
