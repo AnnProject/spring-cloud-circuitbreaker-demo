@@ -20,10 +20,9 @@ public class Resilience4JCircuitBreakerConfig {
     public CircuitBreaker circuitBreaker() {
         CircuitBreakerConfig circuitBreakerConfig = CircuitBreakerConfig.custom()
                 .slidingWindowType(CircuitBreakerConfig.SlidingWindowType.COUNT_BASED) //COUNT_BASED or TIMED_BASED.
-                // What we consider in closed states - count of request or time?
-                .failureRateThreshold(50) // Configures the failure rate threshold in percentage. If 50% request fails -> open state
-                .waitDurationInOpenState(Duration.ofMillis(1000)) // how long the CircuitBreaker should stay open, before it switches to half open
-                .slidingWindowSize(4) // Count of request calls we consider in closed state
+                .failureRateThreshold(50) // failure rate threshold in percentage. If 50% request fails -> open state
+                .waitDurationInOpenState(Duration.ofMillis(5000)) // 5 sec, how long the CircuitBreaker should stay open, before it switches to half open
+                .slidingWindowSize(4)// Count of request calls we consider in closed state
                 .build();
 
         CircuitBreakerRegistry circuitBreakerRegistry =

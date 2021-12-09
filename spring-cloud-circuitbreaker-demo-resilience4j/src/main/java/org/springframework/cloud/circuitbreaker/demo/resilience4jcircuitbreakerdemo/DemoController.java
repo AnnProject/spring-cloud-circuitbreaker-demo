@@ -15,12 +15,15 @@
  */
 package org.springframework.cloud.circuitbreaker.demo.resilience4jcircuitbreakerdemo;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.github.resilience4j.decorators.Decorators;
+import io.vavr.control.Try;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -71,15 +74,17 @@ public class DemoController {
 
     @GetMapping("/getWithCircuitBreaker")
     public Map getWithCircuitBreaker() {
-        Supplier<Map> decorated = Decorators
+        Supplier<Map> decoratedSupplier = Decorators
                 .ofSupplier(httpBin.halfThrowsError())
                 .withCircuitBreaker(circuitBreaker)
-                .withFallback(e -> {
-                    Map<Throwable, String> message = new HashMap<>();
-                    message.put(e, "This is Circuit Breaker fallback message");
-                    return message;
-                })
+                //.withRetry()
+                //.withRateLimiter()
+                //.withThreadPoolBulkhead()
+                .withFallback(e -> Collections.singletonMap(e, "Fallback message"))
                 .decorate();
-        return circuitBreaker.executeSupplier(decorated);
+        Map result = Try.ofSupplier(decoratedSupplier)
+                .recover(throwable -> Collections.singletonMap(throwable, "Hello from recovery"))
+                .get();
+        return result;
     }
 }

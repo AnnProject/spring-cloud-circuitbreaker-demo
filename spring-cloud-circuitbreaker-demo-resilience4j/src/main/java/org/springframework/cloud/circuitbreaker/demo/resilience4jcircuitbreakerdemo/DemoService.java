@@ -32,7 +32,7 @@ public class DemoService {
 
     public DemoService(RestTemplate rest) {
         this.rest = rest;
-        this.errorsFlag = true;
+        this.errorsFlag = false;
     }
 
     public Map get() {
@@ -60,8 +60,8 @@ public class DemoService {
 
     public Supplier<Map> halfThrowsError() {
         return () -> {
-            boolean willBeError = RANDOM.nextBoolean();
-            if (willBeError && this.errorsFlag) {
+            //boolean willBeError = RANDOM.nextBoolean();
+            if (this.errorsFlag) {
                 throw new RuntimeException("Oops... Service does not work");
             }
             return get();
